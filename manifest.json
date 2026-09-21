@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "TabTerrior",
+  "version": "2.1",
+  "browser_specific_settings": {
+    "gecko": { "id": "focus@example.local" }
+  },
+  "icons": {
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": [
+    "declarativeNetRequest",
+    "storage",
+    "alarms",
+    "notifications",
+    "activeTab"
+  ],
+  "background": { "scripts": ["background.js"] },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TabTerrior",
+    "default_icon": {
+      "16": "icons/toolbar-16.png",
+      "32": "icons/toolbar-32.png"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+body {
+  width: 320px;
+  margin: 0;
+  padding: 12px;
+  font: 13px/1.4 system-ui, sans-serif;
+}
+section + section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #ddd;
+}
+h2 { font-size: 14px; margin: 0 0 4px; }
+.status { margin: 0 0 8px; color: #555; }
+.note { margin: 0 0 6px; font-style: italic; }
+.pause-form, .row { display: flex; gap: 6px; margin: 6px 0; }
+.pause-form input, .row input { flex: 1; min-width: 0; }
+#limit { max-width: 70px; }
+ul { list-style: none; padding: 0; margin: 6px 0; }
+#sites li { display: flex; justify-content: space-between; padding: 2px 0; }
+#log li { color: #555; font-size: 12px; padding: 2px 0; }
+.muted { color: #999; }
+button.link { background: none; border: none; color: #2563eb; cursor: pointer; padding: 0; }
+button.link:disabled { color: #aaa; cursor: not-allowed; }
+button.secondary { width: 100%; }
+#error { color: #dc2626; margin: 8px 0 0; }
+#error:empty { display: none; }
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+header img { width: 32px; height: 32px; }
+header h1 { font-size: 16px; margin: 0; }

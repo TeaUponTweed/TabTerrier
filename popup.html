@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <img src="icons/icon-48.png" alt="" />
+    <h1>TabTerrior</h1>
+  </header>
+  <section id="block">
+    <h2>Site blocking</h2>
+    <p class="status"></p>
+
+    <div class="pause" data-feature="block">
+      <div class="paused-view">
+        <p class="note"></p>
+        <button class="resume">Resume now</button>
+      </div>
+      <form class="pause-form">
+        <select name="minutes">
+          <option value="5">5 min</option>
+          <option value="15" selected>15 min</option>
+          <option value="30">30 min</option>
+          <option value="60">1 hour</option>
+        </select>
+        <input name="note" placeholder="Why are you pausing?" required />
+        <button>Pause</button>
+      </form>
+    </div>
+
+    <ul id="sites"></ul>
+    <form id="add-site" class="row">
+      <input name="site" placeholder="example.com" required />
+      <button>Add</button>
+    </form>
+    <button id="add-current" class="secondary">Block the current site</button>
+  </section>
+
+  <section id="tabs">
+    <h2>Tab limit</h2>
+    <p class="status"></p>
+
+    <div class="row">
+      <input type="number" id="limit" min="1" />
+      <button id="save-limit">Save limit</button>
+    </div>
+
+    <div class="pause" data-feature="tabs">
+      <div class="paused-view">
+        <p class="note"></p>
+        <button class="resume">Resume now</button>
+      </div>
+      <form class="pause-form">
+        <select name="minutes">
+          <option value="5">5 min</option>
+          <option value="15" selected>15 min</option>
+          <option value="30">30 min</option>
+          <option value="60">1 hour</option>
+        </select>
+        <input name="note" placeholder="Why are you pausing?" required />
+        <button>Pause</button>
+      </form>
+    </div>
+  </section>
+
+  <section>
+    <h2>Recent pauses</h2>
+    <ul id="log"></ul>
+  </section>
+
+  <p id="error"></p>
+  <script src="popup.js"></script>
+</body>
+</html>
