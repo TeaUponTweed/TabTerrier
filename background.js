@@ -31,21 +31,21 @@ async function syncRules() {
     addRules.push({
       id: 1,
       priority: 1,
-      action: {
-        type: "redirect",
-        // No site in the URL: the blocked page must not name what it blocked.
-        redirect: { extensionPath: "/blocked.html" },
-      },
+      action: { type: "block" },
       condition: {
         requestDomains: state.sites, // matches subdomains too
         resourceTypes: ["main_frame", "sub_frame"],
       },
     });
   }
-  await browser.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: existing.map((r) => r.id),
-    addRules,
-  });
+  try {
+    await browser.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: existing.map((r) => r.id),
+      addRules,
+    });
+  } catch (e) {
+    console.error("TabTerrier: could not apply blocking rules.", e);
+  }
 }
 
 async function updateBadge() {
@@ -104,7 +104,16 @@ async function migrateToSync() {
   for (const k of keys) {
     if (local[k] !== undefined && synced[k] === undefined) patch[k] = local[k];
   }
-  if (Object.keys(patch).length) await browser.storage.sync.set(patch);
+  if (Object.keys(patch).length) {
+    await browser.storage.sync.set(patch);
+    const readback = await browser.storage.sync.get(Object.keys(patch));
+    for (const k of Object.keys(patch)) {
+      if (readback[k] === undefined) {
+        console.error("TabTerrier: sync did not accept config; keeping local copy.");
+        return;
+      }
+    }
+  }
   await browser.storage.local.remove(keys);
 }
 
@@ -174,7 +183,12 @@ browser.webNavigation.onBeforeNavigate.addListener(async (details) => {
     return;
   }
   const site = matchedSite(state.sites, host);
-  if (site) await browser.storage.session.set({ [blockedKey(details.tabId)]: site });
+  if (!site) return;
+
+  await browser.storage.session.set({ [blockedKey(details.tabId)]: site });
+  await browser.tabs.update(details.tabId, {
+    url: browser.runtime.getURL("blocked.html"),
+  });
 });
 
 browser.tabs.onRemoved.addListener((tabId) =>
