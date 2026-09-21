@@ -1,0 +1,8 @@
+{
+  "name": "tabterrier-tools",
+  "private": true,
+  "description": "Pinned web-ext toolchain. Runs only inside Docker; never installed on the host.",
+  "dependencies": {
+    "web-ext": "10.7.0"
+  }
+}

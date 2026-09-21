@@ -57,7 +57,12 @@ function render(s) {
       return li;
     })
   );
-  if (!s.log.length) $("#log").innerHTML = "<li class='muted'>None yet.</li>";
+  if (!s.log.length) {
+    const li = document.createElement("li");
+    li.className = "muted";
+    li.textContent = "None yet.";
+    $("#log").replaceChildren(li);
+  }
 }
 
 document.querySelectorAll(".pause").forEach((box) => {
@@ -87,8 +92,9 @@ $("#sites").addEventListener("click", (e) => {
   if (site) send({ type: "removeSite", site });
 });
 
-$("#save-limit").addEventListener("click", () =>
-  send({ type: "setTabLimit", limit: $("#limit").value })
-);
+$("#limit-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  send({ type: "setTabLimit", limit: $("#limit").value });
+});
 
 send({ type: "getState" });

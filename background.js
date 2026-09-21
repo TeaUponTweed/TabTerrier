@@ -38,9 +38,10 @@ async function updateBadge() {
   const state = await getState();
   const count = await countTabs();
   const anyPaused = FEATURES.some((f) => isPaused(state, f));
-  const color = anyPaused ? "#d97706" : count >= state.tabLimit ? "#dc2626" : "#4b5563";
+  const color = anyPaused ? "#8a6a1f" : count >= state.tabLimit ? "#8f2c1f" : "#57534a";
   browser.action.setBadgeText({ text: String(count) });
   browser.action.setBadgeBackgroundColor({ color });
+  browser.action.setBadgeTextColor({ color: "#e7ddc9" });
 }
 
 async function refresh() {
@@ -112,6 +113,7 @@ browser.tabs.onCreated.addListener(async (tab) => {
     await browser.tabs.remove(tab.id);
     browser.notifications.create({
       type: "basic",
+      iconUrl: "icons/icon-96.png",
       title: "Tab limit reached",
       message: `You're at your limit of ${state.tabLimit} tabs. Close one first, or pause the limit.`,
     });
@@ -175,11 +177,3 @@ async function handle(msg) {
 }
 
 browser.runtime.onMessage.addListener((msg) => handle(msg));
-
-
-browser.notifications.create({
-  type: "basic",
-  iconUrl: "icons/icon-96.png",
-  title: "Tab limit reached.",
-  message: `You're at your limit of ${state.tabLimit} tabs. Close one first, or pause the limit.`,
-});

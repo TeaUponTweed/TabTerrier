@@ -1,0 +1,28 @@
+#!/usr/bin/env sh
+# Run the pinned web-ext toolchain in a throwaway container.
+#
+#   tools/webext lint
+#   tools/webext build
+#   tools/webext sign --channel=unlisted
+#
+# Credentials are read from the environment (AMO_JWT_ISSUER / AMO_JWT_SECRET)
+# and passed straight into the container, so they never hit argv or shell
+# history. Nothing npm-related is installed on the host.
+set -eu
+
+repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+image=tabterrier-tools
+
+# Rebuild only when the toolchain definition changes.
+if [ -z "$(docker images -q "$image" 2>/dev/null)" ]; then
+  echo "Building $image (one time)..." >&2
+  docker build -q -t "$image" "$repo/tools" >/dev/null
+fi
+
+# web-ext reads WEB_EXT_API_KEY/SECRET natively; map our clearer names onto them.
+exec docker run --rm -i \
+  --user "$(id -u):$(id -g)" \
+  -v "$repo:/ext" \
+  -e "WEB_EXT_API_KEY=${AMO_JWT_ISSUER:-}" \
+  -e "WEB_EXT_API_SECRET=${AMO_JWT_SECRET:-}" \
+  "$image" "$@"

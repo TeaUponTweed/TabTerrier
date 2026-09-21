@@ -2,16 +2,18 @@
 <html>
 <head>
   <meta charset="utf-8" />
+  <title>TabTerrier</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <header>
     <img src="icons/icon-48.png" alt="" />
-    <h1>TabTerrior</h1>
+    <h1>TabTerrier</h1>
   </header>
+
   <section id="block">
     <h2>Site blocking</h2>
-    <p class="status"></p>
+    <p class="status" role="status"></p>
 
     <div class="pause" data-feature="block">
       <div class="paused-view">
@@ -19,20 +21,20 @@
         <button class="resume">Resume now</button>
       </div>
       <form class="pause-form">
-        <select name="minutes">
+        <select name="minutes" aria-label="Pause duration">
           <option value="5">5 min</option>
           <option value="15" selected>15 min</option>
           <option value="30">30 min</option>
           <option value="60">1 hour</option>
         </select>
-        <input name="note" placeholder="Why are you pausing?" required />
+        <input name="note" placeholder="Why are you pausing?" aria-label="Reason for pausing" required />
         <button>Pause</button>
       </form>
     </div>
 
     <ul id="sites"></ul>
     <form id="add-site" class="row">
-      <input name="site" placeholder="example.com" required />
+      <input name="site" placeholder="example.com" aria-label="Site to block" required />
       <button>Add</button>
     </form>
     <button id="add-current" class="secondary">Block the current site</button>
@@ -40,12 +42,12 @@
 
   <section id="tabs">
     <h2>Tab limit</h2>
-    <p class="status"></p>
+    <p class="status" role="status"></p>
 
-    <div class="row">
-      <input type="number" id="limit" min="1" />
-      <button id="save-limit">Save limit</button>
-    </div>
+    <form id="limit-form" class="row">
+      <input type="number" id="limit" name="limit" min="1" aria-label="Maximum open tabs" />
+      <button>Save limit</button>
+    </form>
 
     <div class="pause" data-feature="tabs">
       <div class="paused-view">
@@ -53,13 +55,13 @@
         <button class="resume">Resume now</button>
       </div>
       <form class="pause-form">
-        <select name="minutes">
+        <select name="minutes" aria-label="Pause duration">
           <option value="5">5 min</option>
           <option value="15" selected>15 min</option>
           <option value="30">30 min</option>
           <option value="60">1 hour</option>
         </select>
-        <input name="note" placeholder="Why are you pausing?" required />
+        <input name="note" placeholder="Why are you pausing?" aria-label="Reason for pausing" required />
         <button>Pause</button>
       </form>
     </div>
@@ -70,7 +72,7 @@
     <ul id="log"></ul>
   </section>
 
-  <p id="error"></p>
+  <p id="error" role="alert"></p>
   <script src="popup.js"></script>
 </body>
 </html>
