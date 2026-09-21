@@ -20,7 +20,11 @@ if [ -z "$(docker images -q "$image" 2>/dev/null)" ]; then
 fi
 
 # web-ext reads WEB_EXT_API_KEY/SECRET natively; map our clearer names onto them.
-exec docker run --rm -i \
+# Allocate a TTY when we have one, so Ctrl-C reaches web-ext and progress
+# output isn't block-buffered. Signing polls silently for up to 15 minutes.
+[ -t 1 ] && tty_flag=-t || tty_flag=
+
+exec docker run --rm -i ${tty_flag} \
   --user "$(id -u):$(id -g)" \
   -v "$repo:/ext" \
   -e "WEB_EXT_API_KEY=${AMO_JWT_ISSUER:-}" \
