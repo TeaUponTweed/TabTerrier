@@ -27,6 +27,8 @@ fi
 exec docker run --rm -i ${tty_flag} \
   --user "$(id -u):$(id -g)" \
   -v "$repo:/ext" \
+  -e HOME=/tmp \
+  -e NO_UPDATE_NOTIFIER=1 \
   -e "WEB_EXT_API_KEY=${AMO_JWT_ISSUER:-}" \
   -e "WEB_EXT_API_SECRET=${AMO_JWT_SECRET:-}" \
   "$image" "$@"
