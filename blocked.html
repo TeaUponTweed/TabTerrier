@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Blocked</title>
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="page.css" />
+</head>
+<body>
+  <main>
+    <img class="mark" src="icons/icon-96.png" alt="" />
+    <h1>TabTerrier</h1>
+    <p class="tagline">headed this one off.</p>
+
+    <!-- Only ever names the site you just tried to reach. The rest of the
+         list is never rendered anywhere. -->
+    <p id="site" class="detail"></p>
+    <p class="detail">You asked not to come here right now.</p>
+
+    <form class="pause-form" id="pause-form">
+      <select name="minutes" aria-label="Pause duration">
+        <option value="5">5 min</option>
+        <option value="15" selected>15 min</option>
+        <option value="30">30 min</option>
+        <option value="60">1 hour</option>
+      </select>
+      <input name="note" placeholder="Why are you unblocking?" aria-label="Reason for pausing" required />
+      <button>Pause blocking</button>
+    </form>
+
+    <div class="actions" id="unblock-actions" hidden>
+      <button id="retry">Continue to site</button>
+      <button id="unblock" class="ghost">Unblock for good</button>
+    </div>
+
+    <p id="notice" class="detail"></p>
+    <p id="error" role="alert"></p>
+  </main>
+  <script src="blocked.js"></script>
+</body>
+</html>

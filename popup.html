@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>TabTerrier</title>
+  <link rel="stylesheet" href="theme.css" />
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
@@ -32,12 +33,17 @@
       </form>
     </div>
 
-    <ul id="sites"></ul>
     <form id="add-site" class="row">
       <input name="site" placeholder="example.com" aria-label="Site to block" required />
       <button>Add</button>
     </form>
     <button id="add-current" class="secondary">Block the current site</button>
+
+    <form id="remove-site" class="row">
+      <input name="site" placeholder="Type a site to unblock" aria-label="Site to unblock" required />
+      <button class="ghost">Remove</button>
+    </form>
+    <p id="notice" role="status"></p>
   </section>
 
   <section id="tabs">

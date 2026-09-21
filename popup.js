@@ -2,12 +2,21 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const time = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 const LABELS = { block: "Sites", tabs: "Tabs" };
 
-async function send(msg) {
+let noticeTimer = null;
+function notice(text) {
+  clearTimeout(noticeTimer);
+  $("#notice").textContent = text;
+  noticeTimer = setTimeout(() => ($("#notice").textContent = ""), 4000);
+}
+
+async function send(msg, okText) {
   $("#error").textContent = "";
   try {
     render(await browser.runtime.sendMessage(msg));
+    if (okText) notice(okText);
   } catch (e) {
     $("#error").textContent = e.message;
+    notice("");
   }
 }
 
@@ -24,24 +33,7 @@ function render(s) {
 
   $("#block .status").textContent = paused.block
     ? "Paused"
-    : `Blocking ${s.sites.length} site${s.sites.length === 1 ? "" : "s"}`;
-
-  const list = $("#sites");
-  list.replaceChildren(
-    ...s.sites.map((site) => {
-      const li = document.createElement("li");
-      const name = document.createElement("span");
-      name.textContent = site;
-      const btn = document.createElement("button");
-      btn.textContent = "Remove";
-      btn.className = "link";
-      btn.dataset.site = site;
-      btn.disabled = !paused.block;
-      btn.title = paused.block ? "" : "Pause blocking to remove sites";
-      li.append(name, btn);
-      return li;
-    })
-  );
+    : `Blocking ${s.siteCount} site${s.siteCount === 1 ? "" : "s"}`;
 
   $("#tabs .status").textContent =
     `${s.tabCount} / ${s.tabLimit} tabs` + (paused.tabs ? " · limit paused" : "");
@@ -78,18 +70,19 @@ document.querySelectorAll(".pause").forEach((box) => {
 
 $("#add-site").addEventListener("submit", (e) => {
   e.preventDefault();
-  send({ type: "addSite", site: e.target.site.value });
+  send({ type: "addSite", site: e.target.site.value }, "Added.");
+  e.target.reset();
+});
+
+$("#remove-site").addEventListener("submit", (e) => {
+  e.preventDefault();
+  send({ type: "removeSite", site: e.target.site.value }, "Removed.");
   e.target.reset();
 });
 
 $("#add-current").addEventListener("click", async () => {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  send({ type: "addSite", site: tab?.url });
-});
-
-$("#sites").addEventListener("click", (e) => {
-  const site = e.target.dataset?.site;
-  if (site) send({ type: "removeSite", site });
+  send({ type: "addSite", site: tab?.url }, "Added.");
 });
 
 $("#limit-form").addEventListener("submit", (e) => {
