@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TabTerrier",
-  "version": "2.4",
+  "version": "2.5",
   "description": "Blocks time-sink sites and caps your open tabs. Pausing costs you a note.",
   "browser_specific_settings": {
     "gecko": {
@@ -28,6 +28,7 @@
   ],
   "background": {
     "scripts": [
+      "constants.js",
       "background.js"
     ]
   },

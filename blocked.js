@@ -1,14 +1,18 @@
 const $ = (sel) => document.querySelector(sel);
 
+// `site` is the list entry we would unblock; `target` is the page you were
+// actually trying to reach, which may be a subdomain or a deep link.
 let site = null;
+let target = null;
 
 async function load() {
-  const { site: found } = await browser.runtime.sendMessage({ type: "blockedSite" });
-  site = found;
-  $("#site").textContent = site ? site : "";
+  const found = await browser.runtime.sendMessage({ type: "blockedSite" });
+  site = found.site;
+  target = found.url || (site ? `https://${site}` : null);
+  $("#site").textContent = site ?? "";
   // Without a known host there is nothing to unblock or return to.
   $("#unblock-form").hidden = !site;
-  $("#retry").hidden = !site;
+  $("#retry").hidden = !target;
 }
 
 function showUnblockActions(until) {
@@ -39,7 +43,7 @@ $("#pause-form").addEventListener("submit", async (e) => {
 });
 
 $("#retry").addEventListener("click", () => {
-  if (site) location.href = `https://${site}`;
+  if (target) location.href = target;
 });
 
 $("#unblock-form").addEventListener("submit", async (e) => {
@@ -53,10 +57,17 @@ $("#unblock-form").addEventListener("submit", async (e) => {
     });
     $("#notice").textContent = `${site} removed from your list.`;
     $("#unblock-form").hidden = true;
+    // Nothing left to pause once the site is off the list.
+    $("#pause-form").hidden = true;
     $("#unblock-actions").hidden = false;
   } catch (err) {
     $("#error").textContent = err.message;
   }
 });
 
-load();
+// The unblock form and retry button start hidden, so a failed lookup would
+// otherwise leave a page with nothing on it and no explanation.
+load().catch((e) => {
+  console.error("TabTerrier: could not identify the blocked site.", e);
+  $("#error").textContent = "Couldn't tell which site this was.";
+});

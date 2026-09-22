@@ -1,16 +1,20 @@
 const $ = (sel, root = document) => root.querySelector(sel);
 const LABELS = { block: "Paused sites", tabs: "Paused tabs", unblock: "Unblocked a site" };
 const PREVIEW = 5;
-const FEATURES = ["block", "tabs"];
 const RESUMES = { block: "Blocking resumes in", tabs: "Limit resumes in" };
 
 let showAll = false;
 
 let noticeTimer = null;
 function notice(text) {
-  clearTimeout(noticeTimer);
+  clearNotice();
   $("#notice").textContent = text;
-  noticeTimer = setTimeout(() => ($("#notice").textContent = ""), 4000);
+  noticeTimer = setTimeout(clearNotice, 4000);
+}
+
+function clearNotice() {
+  clearTimeout(noticeTimer);
+  $("#notice").textContent = "";
 }
 
 async function send(msg, okText) {
@@ -20,7 +24,7 @@ async function send(msg, okText) {
     if (okText) notice(okText);
   } catch (e) {
     $("#error").textContent = e.message;
-    notice("");
+    clearNotice();
   }
 }
 
@@ -60,30 +64,31 @@ function render(s) {
     `${s.tabCount} / ${s.tabLimit} tabs` + (paused.tabs ? " · limit paused" : "");
   if (document.activeElement !== $("#limit")) $("#limit").value = s.tabLimit;
 
-  const shown = showAll ? s.log : s.log.slice(0, PREVIEW);
   $("#log").classList.toggle("scroll", showAll);
-  $("#log").replaceChildren(
-    ...shown.map((entry) => {
-      const li = document.createElement("li");
-      const when = new Date(entry.at).toLocaleString([], {
-        month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-      });
-      const parts = [when, LABELS[entry.feature] ?? entry.feature];
-      if (entry.minutes) parts.push(`${entry.minutes}m`);
-      li.textContent = `${parts.join(" · ")} — ${entry.note}`;
-      return li;
-    })
-  );
-
-  const more = s.log.length > PREVIEW;
-  $("#show-all").hidden = !more;
-  if (more) $("#show-all").textContent = showAll ? "Show fewer" : `Show all ${s.log.length}`;
   if (!s.log.length) {
     const li = document.createElement("li");
     li.className = "muted";
     li.textContent = "None yet.";
     $("#log").replaceChildren(li);
+  } else {
+    const shown = showAll ? s.log : s.log.slice(0, PREVIEW);
+    $("#log").replaceChildren(
+      ...shown.map((entry) => {
+        const li = document.createElement("li");
+        const when = new Date(entry.at).toLocaleString([], {
+          month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+        });
+        const parts = [when, LABELS[entry.feature] ?? entry.feature];
+        if (entry.minutes) parts.push(`${entry.minutes}m`);
+        li.textContent = `${parts.join(" · ")} — ${entry.note}`;
+        return li;
+      })
+    );
   }
+
+  const more = s.log.length > PREVIEW;
+  $("#show-all").hidden = !more;
+  if (more) $("#show-all").textContent = showAll ? "Show fewer" : `Show all ${s.log.length}`;
 }
 
 document.querySelectorAll(".pause").forEach((box) => {

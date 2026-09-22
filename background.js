@@ -8,8 +8,34 @@ const LOCAL = {
   pauses: { block: null, tabs: null }, // { until: ms, note: string }
   log: [],                             // [{ feature, note, minutes, at }]
 };
-const FEATURES = ["block", "tabs"];
 const STARTUP_GRACE_MS = 15000;
+const FLASH_MS = 1500;
+const BADGE = {
+  text:    "#e7ddc9",
+  idle:    "#57534a",
+  paused:  "#8a6a1f",
+  over:    "#8f2c1f",
+  ok:      "#4a5a23",
+};
+
+// Seeded while this script is evaluated, which happens before any listener
+// below can fire. Everyone awaits this one promise, so nobody can catch the
+// value unset and mistake a session restore for ordinary tab opening. Session
+// storage dies with the browser, so a real restart re-seeds it, while an event
+// page rebuilt mid-session finds the original boot time and keeps it.
+const bootReady = browser.storage.session.get({ bootAt: 0 }).then(async ({ bootAt }) => {
+  if (!bootAt) {
+    bootAt = Date.now();
+    await browser.storage.session.set({ bootAt });
+  }
+  return bootAt;
+});
+
+// Several writes below are read-modify-write. Funnelling them through one queue
+// stops two quick actions from clobbering each other's entry. A failed write
+// must not wedge the queue, hence the same handler on both paths.
+let writes = Promise.resolve();
+const serialize = (fn) => (writes = writes.then(fn, fn));
 
 async function getState() {
   const [synced, local] = await Promise.all([
@@ -52,10 +78,21 @@ async function updateBadge() {
   const state = await getState();
   const count = await countTabs();
   const anyPaused = FEATURES.some((f) => isPaused(state, f));
-  const color = anyPaused ? "#8a6a1f" : count >= state.tabLimit ? "#8f2c1f" : "#57534a";
+  const color = anyPaused ? BADGE.paused : count >= state.tabLimit ? BADGE.over : BADGE.idle;
   browser.action.setBadgeText({ text: String(count) });
   browser.action.setBadgeBackgroundColor({ color });
-  browser.action.setBadgeTextColor({ color: "#e7ddc9" });
+  browser.action.setBadgeTextColor({ color: BADGE.text });
+}
+
+// The context menu has no UI of its own, so the badge carries the news for a
+// moment. If the event page is torn down before the timer fires, the next tab
+// opened or closed puts the count back.
+let flashTimer = null;
+async function flash(text, color) {
+  clearTimeout(flashTimer);
+  await browser.action.setBadgeText({ text });
+  await browser.action.setBadgeBackgroundColor({ color });
+  flashTimer = setTimeout(updateBadge, FLASH_MS);
 }
 
 async function refresh() {
@@ -65,10 +102,25 @@ async function refresh() {
 
 // ---------- pausing ----------
 
-async function addLog(entry) {
-  const { log } = await browser.storage.local.get({ log: [] });
-  await browser.storage.local.set({
-    log: [{ ...entry, at: Date.now() }, ...log].slice(0, 50),
+function addLog(entry) {
+  return serialize(async () => {
+    const { log } = await browser.storage.local.get({ log: [] });
+    await browser.storage.local.set({
+      log: [{ ...entry, at: Date.now() }, ...log].slice(0, 50),
+    });
+  });
+}
+
+// Reads the pause map fresh inside the queue, hands it to `mutate`, and writes
+// it back unless `mutate` returns false to say nothing changed.
+function updatePauses(mutate) {
+  return serialize(async () => {
+    const { pauses } = await browser.storage.local.get({
+      pauses: structuredClone(LOCAL.pauses),
+    });
+    if (mutate(pauses) === false) return pauses;
+    await browser.storage.local.set({ pauses });
+    return pauses;
   });
 }
 
@@ -78,19 +130,19 @@ async function pause(feature, minutes, note) {
   if (!note) throw new Error("Write a note about why you're pausing.");
   if (!(minutes > 0)) throw new Error("Pick a duration.");
 
-  const state = await getState();
   const until = Date.now() + minutes * 60_000;
-  state.pauses[feature] = { until, note };
-  await browser.storage.local.set({ pauses: state.pauses });
+  await updatePauses((pauses) => {
+    pauses[feature] = { until, note };
+  });
   await addLog({ feature, note, minutes });
   browser.alarms.create(`resume:${feature}`, { when: until });
   await refresh();
 }
 
 async function resume(feature) {
-  const state = await getState();
-  state.pauses[feature] = null;
-  await browser.storage.local.set({ pauses: state.pauses });
+  await updatePauses((pauses) => {
+    pauses[feature] = null;
+  });
   await browser.alarms.clear(`resume:${feature}`);
   await refresh();
 }
@@ -127,19 +179,20 @@ async function migrateToSync() {
 // Clear expired pauses and re-arm alarms for live ones.
 async function reconcile() {
   await migrateToSync();
-  const state = await getState();
-  let changed = false;
-  for (const f of FEATURES) {
-    const p = state.pauses[f];
-    if (!p) continue;
-    if (p.until <= Date.now()) {
-      state.pauses[f] = null;
-      changed = true;
-    } else {
-      browser.alarms.create(`resume:${f}`, { when: p.until });
+  await updatePauses((pauses) => {
+    let changed = false;
+    for (const f of FEATURES) {
+      const p = pauses[f];
+      if (!p) continue;
+      if (p.until <= Date.now()) {
+        pauses[f] = null;
+        changed = true;
+      } else {
+        browser.alarms.create(`resume:${f}`, { when: p.until });
+      }
     }
-  }
-  if (changed) await browser.storage.local.set({ pauses: state.pauses });
+    return changed;
+  });
   await refresh();
 }
 
@@ -147,16 +200,13 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (area === "sync" && Object.keys(changes).some((k) => k in SYNCED)) refresh();
 });
 
-browser.runtime.onStartup.addListener(async () => {
-  await browser.storage.session.set({ bootAt: Date.now() });
-  await reconcile();
-});
+browser.runtime.onStartup.addListener(reconcile);
 browser.runtime.onInstalled.addListener(reconcile);
 
 // ---------- tab limit ----------
 
 browser.tabs.onCreated.addListener(async (tab) => {
-  const { bootAt = 0 } = await browser.storage.session.get("bootAt");
+  const bootAt = await bootReady;
   const state = await getState();
   const inGrace = Date.now() - bootAt < STARTUP_GRACE_MS;
 
@@ -165,14 +215,28 @@ browser.tabs.onCreated.addListener(async (tab) => {
   }
   updateBadge();
 });
-browser.tabs.onRemoved.addListener(() => updateBadge());
+
+browser.tabs.onRemoved.addListener((tabId) => {
+  updateBadge();
+  // A closed tab also takes its blocked-page record with it (see below).
+  browser.storage.session.remove(blockedKey(tabId));
+});
 
 // ---------- blocked-page identity ----------
 
-// DNR redirects without telling us what it caught, and we deliberately keep the
-// host out of the redirect URL so it never reaches the address bar or history.
-// Recording it here lets blocked.html offer to unblock the site you just tried.
+// Two things block a request and neither says what it caught. The DNR rule is
+// the network-level backstop; on its own it would leave you on the browser's
+// error page, so the webNavigation listener below is what swaps in blocked.html
+// instead. We deliberately keep the destination out of that page's URL, so it
+// never reaches the address bar or history. Parking it in session storage -
+// which dies with the tab, and with the browser - lets blocked.html name the
+// site and send you back to the exact page once blocking is paused.
 const blockedKey = (tabId) => `blocked:${tabId}`;
+
+// An older build stored a bare site string here, and session storage outlives
+// an extension reload, so tolerate both shapes.
+const readBlocked = (value) =>
+  typeof value === "string" ? { site: value, url: null } : value ?? null;
 
 function matchedSite(sites, host) {
   return sites.find((s) => host === s || host.endsWith(`.${s}`));
@@ -192,30 +256,39 @@ browser.webNavigation.onBeforeNavigate.addListener(async (details) => {
   const site = matchedSite(state.sites, host);
   if (!site) return;
 
-  await browser.storage.session.set({ [blockedKey(details.tabId)]: site });
+  // `site` is the list entry, which is what you would unblock; `url` is where
+  // you were actually headed, which is where "Continue to site" should land.
+  await browser.storage.session.set({
+    [blockedKey(details.tabId)]: { site, url: details.url },
+  });
   await browser.tabs.update(details.tabId, {
     url: browser.runtime.getURL("blocked.html"),
   });
 });
 
-browser.tabs.onRemoved.addListener((tabId) =>
-  browser.storage.session.remove(blockedKey(tabId))
-);
-
 // ---------- context menu ----------
 
-browser.runtime.onInstalled.addListener(() => {
+// Created here rather than in onInstalled: an event page can be torn down and
+// rebuilt at any time, and removeAll keeps a repeat create harmless.
+browser.menus.removeAll().then(() =>
   browser.menus.create({
     id: "block-this-site",
     title: "Block this site with TabTerrier",
     contexts: ["page", "link"],
-  });
-});
+  })
+);
 
 browser.menus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== "block-this-site") return;
   // linkUrl when you right-click a link, otherwise whatever page you are on.
-  await addSite(info.linkUrl || info.pageUrl || tab?.url);
+  try {
+    await addSite(info.linkUrl || info.pageUrl || tab?.url);
+    await flash("+", BADGE.ok);
+  } catch (e) {
+    // Nothing on screen belongs to us here, so the badge has to say it.
+    console.error("TabTerrier: could not block that.", e);
+    await flash("!", BADGE.over);
+  }
 });
 
 // ---------- settings ----------
@@ -271,7 +344,7 @@ async function handle(msg, sender) {
       const tabId = sender?.tab?.id;
       const key = blockedKey(tabId);
       const found = tabId === undefined ? {} : await browser.storage.session.get(key);
-      return { site: found[key] ?? null };
+      return readBlocked(found[key]) ?? { site: null, url: null };
     }
     case "pause":       await pause(msg.feature, msg.minutes, msg.note); break;
     case "resume":      await resume(msg.feature); break;

@@ -1,5 +1,5 @@
 const $ = (sel) => document.querySelector(sel);
-const CLOSE_AFTER = 5;
+const CLOSE_AFTER = 8;
 
 let remaining = CLOSE_AFTER;
 let ticker = null;
@@ -30,12 +30,21 @@ function startAutoClose() {
 }
 
 // Show the real limit rather than a hardcoded number.
-browser.runtime.sendMessage({ type: "getState" }).then((s) => {
-  $("#message").textContent = `You're at your limit of ${s.tabLimit} tabs.`;
-});
+browser.runtime
+  .sendMessage({ type: "getState" })
+  .then((s) => {
+    $("#message").textContent = `You're at your limit of ${s.tabLimit} tabs.`;
+  })
+  .catch((e) => console.error("TabTerrier: could not read the tab limit.", e));
 
 $("#close-now").addEventListener("click", closeSelf);
 $("#keep-open").addEventListener("click", () => stopAutoClose("Countdown stopped."));
+
+// Reaching for the form is intent enough. Don't take the tab out from under
+// someone halfway through writing their note.
+$("#pause-form").addEventListener("focusin", () => {
+  if (ticker) stopAutoClose("Countdown stopped.");
+});
 
 $("#pause-form").addEventListener("submit", async (e) => {
   e.preventDefault();

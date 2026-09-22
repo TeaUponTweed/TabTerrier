@@ -8,23 +8,26 @@ function formatRemaining(ms) {
   return hours ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${minutes}:${pad(seconds)}`;
 }
 
-// Ticks every second until `until` passes, then calls onDone once.
+// Ticks every second until `until` passes, then calls onDone exactly once. A
+// deadline that has already elapsed finishes on the spot, without a timer.
 function startCountdown(until, onTick, onDone) {
   let timer = null;
   const stop = () => {
-    clearInterval(timer);
+    if (timer !== null) clearInterval(timer);
     timer = null;
   };
+  // Returns false once the deadline is behind us, so the first call decides
+  // whether an interval is worth starting at all.
   const step = () => {
     const left = until - Date.now();
     if (left <= 0) {
       stop();
       onDone?.();
-      return;
+      return false;
     }
     onTick(formatRemaining(left));
+    return true;
   };
-  step();
-  timer = setInterval(step, 1000);
+  if (step()) timer = setInterval(step, 1000);
   return stop;
 }

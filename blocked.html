@@ -24,7 +24,7 @@
         <option value="30">30 min</option>
         <option value="60">1 hour</option>
       </select>
-      <input name="note" placeholder="Why are you unblocking?" aria-label="Reason for pausing" required />
+      <input name="note" placeholder="Why are you pausing?" aria-label="Reason for pausing" required />
       <button>Pause blocking</button>
     </form>
 
@@ -32,7 +32,7 @@
       <button id="retry">Continue to site</button>
     </div>
 
-    <form class="pause-form" id="unblock-form">
+    <form class="pause-form" id="unblock-form" hidden>
       <input name="note" placeholder="Why are you unblocking it for good?" aria-label="Reason for unblocking" required />
       <button class="ghost">Unblock</button>
     </form>
