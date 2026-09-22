@@ -16,6 +16,9 @@ async function load() {
 }
 
 function showUnblockActions(until) {
+  // The controls live inside the fold, so keep it open rather than letting a
+  // successful pause leave you staring at a collapsed summary.
+  $("#escape").open = true;
   $("#pause-form").hidden = true;
   $("#unblock-actions").hidden = false;
   startCountdown(

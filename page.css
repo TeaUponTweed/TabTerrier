@@ -74,3 +74,20 @@ form.pause-form + form.pause-form { border-top: none; padding-top: 0; margin-top
   text-align: left;
 }
 #error:empty { display: none; }
+
+/* The pause and unblock controls sit behind this fold, so getting past your
+   own block costs a deliberate click before you can even see the way out. */
+details.escape > summary {
+  margin-top: 28px;
+  list-style: none;
+  cursor: pointer;
+  font: 600 11px/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+details.escape > summary::-webkit-details-marker { display: none; }
+details.escape > summary::after { content: " \25B8"; }
+details.escape[open] > summary::after { content: " \25BE"; }
+details.escape > summary:hover { color: var(--ink); }
+details.escape > summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }

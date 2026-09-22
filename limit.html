@@ -22,16 +22,22 @@
       <button id="keep-open" class="ghost">Stop the countdown</button>
     </div>
 
-    <form class="pause-form" id="pause-form">
-      <select name="minutes" aria-label="Pause duration">
-        <option value="5">5 min</option>
-        <option value="15" selected>15 min</option>
-        <option value="30">30 min</option>
-        <option value="60">1 hour</option>
-      </select>
-      <input name="note" placeholder="Why are you pausing?" aria-label="Reason for pausing" required />
-      <button>Pause limit</button>
-    </form>
+    <!-- Pausing the limit is folded away, same as on the blocked page: you
+         have to go looking for the handle before you can use it. -->
+    <details class="escape" id="escape">
+      <summary>I need more tabs anyway</summary>
+
+      <form class="pause-form" id="pause-form">
+        <select name="minutes" aria-label="Pause duration">
+          <option value="5">5 min</option>
+          <option value="15" selected>15 min</option>
+          <option value="30">30 min</option>
+          <option value="60">1 hour</option>
+        </select>
+        <input name="note" placeholder="Why are you pausing?" aria-label="Reason for pausing" required />
+        <button>Pause limit</button>
+      </form>
+    </details>
 
     <p id="error" role="alert"></p>
   </main>

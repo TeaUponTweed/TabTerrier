@@ -15,27 +15,32 @@
     <!-- Only ever names the site you just tried to reach. The rest of the
          list is never rendered anywhere. -->
     <p id="site" class="detail"></p>
-    <p class="detail">You asked not to come here right now.</p>
 
-    <form class="pause-form" id="pause-form">
-      <select name="minutes" aria-label="Pause duration">
-        <option value="5">5 min</option>
-        <option value="15" selected>15 min</option>
-        <option value="30">30 min</option>
-        <option value="60">1 hour</option>
-      </select>
-      <input name="note" placeholder="Why are you pausing?" aria-label="Reason for pausing" required />
-      <button>Pause blocking</button>
-    </form>
+    <!-- The way out is deliberately folded away: if you want past your own
+         block you have to go looking for the handle first. -->
+    <details class="escape" id="escape">
+      <summary>I need to get past this</summary>
 
-    <div class="actions" id="unblock-actions" hidden>
-      <button id="retry">Continue to site</button>
-    </div>
+      <form class="pause-form" id="pause-form">
+        <select name="minutes" aria-label="Pause duration">
+          <option value="5">5 min</option>
+          <option value="15" selected>15 min</option>
+          <option value="30">30 min</option>
+          <option value="60">1 hour</option>
+        </select>
+        <input name="note" placeholder="Why are you pausing?" aria-label="Reason for pausing" required />
+        <button>Pause blocking</button>
+      </form>
 
-    <form class="pause-form" id="unblock-form" hidden>
-      <input name="note" placeholder="Why are you unblocking it for good?" aria-label="Reason for unblocking" required />
-      <button class="ghost">Unblock</button>
-    </form>
+      <div class="actions" id="unblock-actions" hidden>
+        <button id="retry">Continue to site</button>
+      </div>
+
+      <form class="pause-form" id="unblock-form" hidden>
+        <input name="note" placeholder="Why are you unblocking it for good?" aria-label="Reason for unblocking" required />
+        <button class="ghost">Unblock</button>
+      </form>
+    </details>
 
     <p id="notice" class="detail"></p>
     <p id="error" role="alert"></p>

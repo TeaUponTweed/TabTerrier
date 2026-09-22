@@ -41,7 +41,12 @@ $("#close-now").addEventListener("click", closeSelf);
 $("#keep-open").addEventListener("click", () => stopAutoClose("Countdown stopped."));
 
 // Reaching for the form is intent enough. Don't take the tab out from under
-// someone halfway through writing their note.
+// someone halfway through writing their note -- or while they're opening the
+// fold the form is hidden behind.
+$("#escape").addEventListener("toggle", (e) => {
+  if (e.target.open && ticker) stopAutoClose("Countdown stopped.");
+});
+
 $("#pause-form").addEventListener("focusin", () => {
   if (ticker) stopAutoClose("Countdown stopped.");
 });
