@@ -9,14 +9,14 @@ async function closeSelf() {
   if (tab) browser.tabs.remove(tab.id);
 }
 
-function stopCountdown(reason) {
+function stopAutoClose(reason) {
   clearInterval(ticker);
   ticker = null;
   $("#countdown").textContent = reason;
   $("#keep-open").hidden = true;
 }
 
-function startCountdown() {
+function startAutoClose() {
   $("#countdown").textContent = `Closing in ${remaining}...`;
   ticker = setInterval(() => {
     remaining -= 1;
@@ -35,7 +35,7 @@ browser.runtime.sendMessage({ type: "getState" }).then((s) => {
 });
 
 $("#close-now").addEventListener("click", closeSelf);
-$("#keep-open").addEventListener("click", () => stopCountdown("Countdown stopped."));
+$("#keep-open").addEventListener("click", () => stopAutoClose("Countdown stopped."));
 
 $("#pause-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -48,10 +48,12 @@ $("#pause-form").addEventListener("submit", async (e) => {
       minutes: Number(form.minutes.value),
       note: form.note.value,
     });
-    const until = new Date(s.pauses.tabs.until);
     // The original destination is gone, so say so instead of pretending.
-    stopCountdown(
-      `Limit paused until ${until.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.`
+    stopAutoClose("");
+    startCountdown(
+      s.pauses.tabs.until,
+      (left) => ($("#countdown").textContent = `Limit resumes in ${left}`),
+      () => ($("#countdown").textContent = "Limit has resumed.")
     );
     form.hidden = true;
     $("#message").textContent = "Limit paused. Reopen the page you wanted.";
@@ -61,4 +63,4 @@ $("#pause-form").addEventListener("submit", async (e) => {
   }
 });
 
-startCountdown();
+startAutoClose();

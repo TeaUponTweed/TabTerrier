@@ -7,17 +7,18 @@ async function load() {
   site = found;
   $("#site").textContent = site ? site : "";
   // Without a known host there is nothing to unblock or return to.
-  $("#unblock").hidden = !site;
+  $("#unblock-form").hidden = !site;
   $("#retry").hidden = !site;
 }
 
 function showUnblockActions(until) {
   $("#pause-form").hidden = true;
   $("#unblock-actions").hidden = false;
-  $("#notice").textContent = `Blocking paused until ${until.toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-  })}.`;
+  startCountdown(
+    until,
+    (left) => ($("#notice").textContent = `Blocking resumes in ${left}.`),
+    () => ($("#notice").textContent = "Blocking has resumed.")
+  );
 }
 
 $("#pause-form").addEventListener("submit", async (e) => {
@@ -31,7 +32,7 @@ $("#pause-form").addEventListener("submit", async (e) => {
       minutes: Number(form.minutes.value),
       note: form.note.value,
     });
-    showUnblockActions(new Date(s.pauses.block.until));
+    showUnblockActions(s.pauses.block.until);
   } catch (err) {
     $("#error").textContent = err.message;
   }
@@ -41,12 +42,18 @@ $("#retry").addEventListener("click", () => {
   if (site) location.href = `https://${site}`;
 });
 
-$("#unblock").addEventListener("click", async () => {
+$("#unblock-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
   $("#error").textContent = "";
   try {
-    await browser.runtime.sendMessage({ type: "removeSite", site });
+    await browser.runtime.sendMessage({
+      type: "removeSite",
+      site,
+      note: e.target.note.value,
+    });
     $("#notice").textContent = `${site} removed from your list.`;
-    $("#unblock").hidden = true;
+    $("#unblock-form").hidden = true;
+    $("#unblock-actions").hidden = false;
   } catch (err) {
     $("#error").textContent = err.message;
   }

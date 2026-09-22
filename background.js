@@ -65,6 +65,13 @@ async function refresh() {
 
 // ---------- pausing ----------
 
+async function addLog(entry) {
+  const { log } = await browser.storage.local.get({ log: [] });
+  await browser.storage.local.set({
+    log: [{ ...entry, at: Date.now() }, ...log].slice(0, 50),
+  });
+}
+
 async function pause(feature, minutes, note) {
   note = (note || "").trim();
   if (!FEATURES.includes(feature)) throw new Error("Unknown feature.");
@@ -74,8 +81,8 @@ async function pause(feature, minutes, note) {
   const state = await getState();
   const until = Date.now() + minutes * 60_000;
   state.pauses[feature] = { until, note };
-  state.log = [{ feature, note, minutes, at: Date.now() }, ...state.log].slice(0, 50);
-  await browser.storage.local.set({ pauses: state.pauses, log: state.log });
+  await browser.storage.local.set({ pauses: state.pauses });
+  await addLog({ feature, note, minutes });
   browser.alarms.create(`resume:${feature}`, { when: until });
   await refresh();
 }
@@ -232,12 +239,16 @@ async function addSite(input) {
   }
 }
 
-async function removeSite(input) {
+async function removeSite(input, note) {
+  note = (note || "").trim();
   const site = normalizeSite(input);
   const state = await getState();
-  if (!isPaused(state, "block")) throw new Error("Pause site blocking to remove a site.");
   if (!state.sites.includes(site)) throw new Error(`${site} isn't on the list.`);
+  if (!note) throw new Error("Write a note about why you're unblocking it.");
+
   await browser.storage.sync.set({ sites: state.sites.filter((s) => s !== site) });
+  // Deliberately no site recorded: the log stays reviewable without naming names.
+  await addLog({ feature: "unblock", note });
   await refresh();
 }
 
@@ -265,7 +276,7 @@ async function handle(msg, sender) {
     case "pause":       await pause(msg.feature, msg.minutes, msg.note); break;
     case "resume":      await resume(msg.feature); break;
     case "addSite":     await addSite(msg.site); break;
-    case "removeSite":  await removeSite(msg.site); break;
+    case "removeSite":  await removeSite(msg.site, msg.note); break;
     case "setTabLimit": await setTabLimit(msg.limit); break;
     case "getState":    break;
     default: throw new Error(`Unknown message: ${msg.type}`);

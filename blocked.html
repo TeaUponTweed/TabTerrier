@@ -30,12 +30,17 @@
 
     <div class="actions" id="unblock-actions" hidden>
       <button id="retry">Continue to site</button>
-      <button id="unblock" class="ghost">Unblock for good</button>
     </div>
+
+    <form class="pause-form" id="unblock-form">
+      <input name="note" placeholder="Why are you unblocking it for good?" aria-label="Reason for unblocking" required />
+      <button class="ghost">Unblock</button>
+    </form>
 
     <p id="notice" class="detail"></p>
     <p id="error" role="alert"></p>
   </main>
+  <script src="time.js"></script>
   <script src="blocked.js"></script>
 </body>
 </html>

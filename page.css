@@ -62,6 +62,7 @@ form.pause-form {
 }
 form.pause-form input { flex: 1; min-width: 0; }
 form.pause-form[hidden] { display: none; }
+form.pause-form + form.pause-form { border-top: none; padding-top: 0; margin-top: 10px; }
 
 #error {
   margin-top: 16px;

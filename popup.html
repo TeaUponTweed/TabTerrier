@@ -18,6 +18,7 @@
 
     <div class="pause" data-feature="block">
       <div class="paused-view">
+        <p class="remaining" aria-live="polite"></p>
         <p class="note"></p>
         <button class="resume">Resume now</button>
       </div>
@@ -39,9 +40,14 @@
     </form>
     <button id="add-current" class="secondary">Block the current site</button>
 
-    <form id="remove-site" class="row">
-      <input name="site" placeholder="Type a site to unblock" aria-label="Site to unblock" required />
-      <button class="ghost">Remove</button>
+    <form id="remove-site">
+      <div class="row">
+        <input name="site" placeholder="Type a site to unblock" aria-label="Site to unblock" required />
+      </div>
+      <div class="row">
+        <input name="note" placeholder="Why are you unblocking it?" aria-label="Reason for unblocking" required />
+        <button class="ghost">Unblock</button>
+      </div>
     </form>
     <p id="notice" role="status"></p>
   </section>
@@ -57,6 +63,7 @@
 
     <div class="pause" data-feature="tabs">
       <div class="paused-view">
+        <p class="remaining" aria-live="polite"></p>
         <p class="note"></p>
         <button class="resume">Resume now</button>
       </div>
@@ -73,12 +80,14 @@
     </div>
   </section>
 
-  <section>
-    <h2>Recent pauses</h2>
+  <section id="history">
+    <h2>Your notes</h2>
     <ul id="log"></ul>
+    <button id="show-all" class="secondary" hidden></button>
   </section>
 
   <p id="error" role="alert"></p>
+  <script src="time.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

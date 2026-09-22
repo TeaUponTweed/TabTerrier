@@ -1,6 +1,10 @@
 const $ = (sel, root = document) => root.querySelector(sel);
-const time = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-const LABELS = { block: "Sites", tabs: "Tabs" };
+const LABELS = { block: "Paused sites", tabs: "Paused tabs", unblock: "Unblocked a site" };
+const PREVIEW = 5;
+const FEATURES = ["block", "tabs"];
+const RESUMES = { block: "Blocking resumes in", tabs: "Limit resumes in" };
+
+let showAll = false;
 
 let noticeTimer = null;
 function notice(text) {
@@ -20,15 +24,32 @@ async function send(msg, okText) {
   }
 }
 
+let stopTicking = [];
+
 function render(s) {
+  // Drop the previous tick loops before the DOM they wrote to is reused.
+  stopTicking.forEach((stop) => stop());
+  stopTicking = [];
+
   const paused = {};
-  for (const f of ["block", "tabs"]) {
+  for (const f of FEATURES) {
     const p = s.pauses[f];
     paused[f] = !!p && p.until > s.now;
     const box = $(`.pause[data-feature="${f}"]`);
     $(".paused-view", box).hidden = !paused[f];
     $(".pause-form", box).hidden = paused[f];
-    if (paused[f]) $(".note", box).textContent = `Paused until ${time(p.until)} — “${p.note}”`;
+    if (paused[f]) {
+      $(".note", box).textContent = `“${p.note}”`;
+      const el = $(".remaining", box);
+      stopTicking.push(
+        startCountdown(
+          p.until,
+          (left) => (el.textContent = `${RESUMES[f]} ${left}`),
+          // Pause has elapsed; pull fresh state so the form comes back.
+          () => send({ type: "getState" })
+        )
+      );
+    }
   }
 
   $("#block .status").textContent = paused.block
@@ -39,16 +60,24 @@ function render(s) {
     `${s.tabCount} / ${s.tabLimit} tabs` + (paused.tabs ? " · limit paused" : "");
   if (document.activeElement !== $("#limit")) $("#limit").value = s.tabLimit;
 
+  const shown = showAll ? s.log : s.log.slice(0, PREVIEW);
+  $("#log").classList.toggle("scroll", showAll);
   $("#log").replaceChildren(
-    ...s.log.slice(0, 5).map((entry) => {
+    ...shown.map((entry) => {
       const li = document.createElement("li");
       const when = new Date(entry.at).toLocaleString([], {
         month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
       });
-      li.textContent = `${when} · ${LABELS[entry.feature]} · ${entry.minutes}m — ${entry.note}`;
+      const parts = [when, LABELS[entry.feature] ?? entry.feature];
+      if (entry.minutes) parts.push(`${entry.minutes}m`);
+      li.textContent = `${parts.join(" · ")} — ${entry.note}`;
       return li;
     })
   );
+
+  const more = s.log.length > PREVIEW;
+  $("#show-all").hidden = !more;
+  if (more) $("#show-all").textContent = showAll ? "Show fewer" : `Show all ${s.log.length}`;
   if (!s.log.length) {
     const li = document.createElement("li");
     li.className = "muted";
@@ -76,8 +105,16 @@ $("#add-site").addEventListener("submit", (e) => {
 
 $("#remove-site").addEventListener("submit", (e) => {
   e.preventDefault();
-  send({ type: "removeSite", site: e.target.site.value }, "Removed.");
+  send(
+    { type: "removeSite", site: e.target.site.value, note: e.target.note.value },
+    "Unblocked."
+  );
   e.target.reset();
+});
+
+$("#show-all").addEventListener("click", () => {
+  showAll = !showAll;
+  send({ type: "getState" });
 });
 
 $("#add-current").addEventListener("click", async () => {
