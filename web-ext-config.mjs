@@ -6,5 +6,6 @@ export default {
     "web-ext-config.mjs",
     ".gitignore",
     "README.md",
+    "amo-metadata.json",
   ],
 };

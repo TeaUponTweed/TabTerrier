@@ -24,6 +24,19 @@ fi
 # output isn't block-buffered. Signing polls silently for up to 15 minutes.
 [ -t 1 ] && tty_flag=-t || tty_flag=
 
+# AMO requires a license on every listed version, and web-ext only sends one if
+# it is handed --amo-metadata. amo-metadata.json carries ours, so inject it for
+# `sign` rather than relying on whoever runs the command to remember.
+metadata_flag=
+if [ "${1:-}" = sign ] && [ -f "$repo/amo-metadata.json" ]; then
+  metadata_flag=--amo-metadata=/ext/amo-metadata.json
+  for arg in "$@"; do
+    case $arg in
+      --amo-metadata | --amo-metadata=*) metadata_flag= ;;
+    esac
+  done
+fi
+
 exec docker run --rm -i ${tty_flag} \
   --user "$(id -u):$(id -g)" \
   -v "$repo:/ext" \
@@ -31,4 +44,4 @@ exec docker run --rm -i ${tty_flag} \
   -e NO_UPDATE_NOTIFIER=1 \
   -e "WEB_EXT_API_KEY=${AMO_JWT_ISSUER:-}" \
   -e "WEB_EXT_API_SECRET=${AMO_JWT_SECRET:-}" \
-  "$image" "$@"
+  "$image" "$@" ${metadata_flag}
