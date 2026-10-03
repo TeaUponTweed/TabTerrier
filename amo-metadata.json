@@ -1,1 +1,4 @@
-{ "version": { "license": "MPL-2.0" } }
+{
+  "categories": ["tabs"],
+  "version": { "license": "MPL-2.0" }
+}

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "TabTerrier",
   "version": "2.7",
-  "description": "Designed to help you to stay focused while browsing with 2 core features: 1) limit the number of tabs 2) block sites.",
+  "description": "Designed to help you stay focused while browsing. Limit the number of open tabs and block time-sync sites. Pause these when you need to.",
   "browser_specific_settings": {
     "gecko": {
       "id": "tabterrier@dworks.zone",

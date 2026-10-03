@@ -1,6 +1,6 @@
 # TabTerrier
 
-A Firefox extension Designed to help you to stay focused while browsing with 2 core features: 1) limit the number of tabs 2) block sites.
+A Firefox extension designed to help you stay focused while browsing.
 
 ## Features
 
